@@ -175,8 +175,8 @@ pip install -r requirements.txt
 # Playwright 브라우저 설치
 playwright install chromium
 
-# 데이터베이스 마이그레이션
-# (프로덕션에서는 Alembic 사용 권장)
+# 데이터베이스 마이그레이션 적용
+make migrate-up
 
 # FastAPI 서버 실행
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -187,6 +187,134 @@ celery -A app.tasks.celery_tasks worker --loglevel=info
 # 별도 터미널: Celery Beat 실행
 celery -A app.tasks.celery_tasks beat --loglevel=info
 ```
+
+## 📊 데이터베이스 마이그레이션
+
+이 프로젝트는 **Alembic**을 사용하여 데이터베이스 스키마를 관리합니다.
+
+### 기본 사용법
+
+```bash
+# 최신 버전으로 업그레이드
+make migrate-up
+# 또는
+alembic upgrade head
+
+# 현재 마이그레이션 버전 확인
+make migrate-current
+# 또는
+alembic current
+
+# 마이그레이션 히스토리 확인
+make migrate-history
+# 또는
+alembic history
+```
+
+### 새 마이그레이션 생성
+
+```bash
+# 모델 변경사항을 자동으로 감지하여 마이그레이션 생성
+make migrate-auto
+# 또는
+alembic revision --autogenerate -m "add_new_column"
+
+# 수동으로 마이그레이션 생성
+alembic revision -m "custom_changes"
+```
+
+### 마이그레이션 되돌리기
+
+```bash
+# 한 단계 되돌리기
+make migrate-down
+# 또는
+alembic downgrade -1
+
+# 특정 버전으로 되돌리기
+alembic downgrade <revision_id>
+```
+
+### Docker 환경에서 마이그레이션
+
+```bash
+# Docker 컨테이너에서 마이그레이션 실행
+make docker-migrate
+# 또는
+docker-compose exec api alembic upgrade head
+
+# 새 마이그레이션 생성 (Docker 내부)
+docker-compose exec api alembic revision --autogenerate -m "description"
+```
+
+### 마이그레이션 헬퍼 스크립트
+
+편의를 위해 `scripts/migrate.sh` 스크립트를 제공합니다:
+
+```bash
+# 사용 가능한 명령어 보기
+./scripts/migrate.sh help
+
+# 주요 명령어
+./scripts/migrate.sh upgrade          # 업그레이드
+./scripts/migrate.sh downgrade 1      # 1단계 다운그레이드
+./scripts/migrate.sh current          # 현재 버전
+./scripts/migrate.sh history          # 히스토리
+./scripts/migrate.sh autogenerate -m "msg"  # 자동 생성
+```
+
+### ⚠️ 프로덕션 주의사항
+
+1. **항상 백업 먼저**:
+   ```bash
+   pg_dump blog_automation > backup_$(date +%Y%m%d_%H%M%S).sql
+   ```
+
+2. **스테이징에서 먼저 테스트**:
+   ```bash
+   # 스테이징 환경에서
+   alembic upgrade head
+   # 테스트 후 문제없으면 프로덕션 적용
+   ```
+
+3. **마이그레이션 리뷰**:
+   - `autogenerate`로 생성된 마이그레이션은 반드시 검토
+   - 데이터 손실 위험이 있는 작업 주의
+
+4. **다운타임 최소화**:
+   - 가능하면 무중단 마이그레이션 작성
+   - 대용량 테이블 변경 시 점진적 마이그레이션
+
+### 초기 설정
+
+처음 데이터베이스를 설정하는 경우:
+
+```bash
+# 데이터베이스가 비어있는 경우
+make migrate-init
+# 또는
+alembic upgrade head
+```
+
+이미 `init_db()`로 테이블을 생성한 경우:
+
+```bash
+# 현재 상태를 마이그레이션 히스토리에 표시
+alembic stamp head
+```
+
+### 마이그레이션 파일 구조
+
+```
+alembic/
+├── env.py                    # Alembic 환경 설정 (비동기 지원)
+├── script.py.mako           # 마이그레이션 템플릿
+├── README                   # Alembic 사용 가이드
+└── versions/                # 마이그레이션 스크립트들
+    └── 2025_01_15_0000-initial_schema.py  # 초기 스키마
+```
+
+상세한 가이드는 [`alembic/README`](alembic/README)를 참조하세요.
 
 ## API 사용 예제
 
