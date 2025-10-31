@@ -10,8 +10,19 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from sqlalchemy.exc import SQLAlchemyError
 from app.core.config import settings
 from app.core.database import init_db, close_db
+from app.core.exceptions import BlogAutomationException
+from app.core.errors import (
+    blog_automation_exception_handler,
+    http_exception_handler,
+    validation_exception_handler,
+    sqlalchemy_exception_handler,
+    general_exception_handler,
+)
 from app.api.routes import keywords, content, schedule
 from app.utils.logger import get_logger
 import time
@@ -91,24 +102,12 @@ async def log_requests(request: Request, call_next):
     return response
 
 
-# Exception handlers
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handler."""
-    logger.error(
-        "unhandled_exception",
-        path=request.url.path,
-        error=str(exc),
-        error_type=type(exc).__name__
-    )
-
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "detail": "Internal server error",
-            "error": str(exc) if settings.debug else "An error occurred"
-        }
-    )
+# Exception handlers - Order matters! More specific exceptions first
+app.add_exception_handler(BlogAutomationException, blog_automation_exception_handler)
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 
 # Include routers

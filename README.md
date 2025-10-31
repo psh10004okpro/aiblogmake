@@ -269,7 +269,59 @@ pytest --cov=app --cov-report=html
 
 # 특정 테스트만
 pytest tests/test_keywords.py
+
+# 에러 핸들링 테스트
+pytest tests/test_exceptions.py -v
 ```
+
+## 🛡️ 에러 처리
+
+시스템은 강화된 에러 처리를 제공합니다:
+
+### 커스텀 예외 클래스
+
+- **키워드 리서치**: `GoogleAdsAPIError`, `NaverAPIError`, `NoKeywordsFoundError`
+- **콘텐츠 생성**: `ClaudeAPIError`, `ContentTooShortError`, `SEOValidationError`
+- **이미지 생성**: `DalleAPIError`, `UnsplashAPIError`, `ImageOptimizationError`
+- **WordPress 발행**: `WordPressAPIError`, `WordPressAuthenticationError`, `MediaUploadError`
+- **데이터베이스**: `DatabaseConnectionError`, `RecordNotFoundError`, `DuplicateRecordError`
+
+### 일관된 에러 응답 형식
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "KEYWORD_001",
+    "message": "Google Ads API 호출에 실패했습니다. API 키와 설정을 확인해주세요.",
+    "timestamp": "2025-01-15T10:30:00.000Z",
+    "details": {
+      "keywords": ["블로그 SEO"]
+    },
+    "path": "/api/v1/keywords/research"
+  }
+}
+```
+
+### 주요 에러 코드
+
+| 코드 | 설명 | HTTP 상태 |
+|------|------|-----------|
+| `KEYWORD_001` | Google Ads API 오류 | 502 |
+| `KEYWORD_002` | Naver API 오류 | 502 |
+| `KEYWORD_004` | 키워드 없음 | 404 |
+| `CONTENT_001` | Claude API 오류 | 502 |
+| `CONTENT_002` | 콘텐츠 너무 짧음 | 400 |
+| `IMAGE_001` | DALL-E API 오류 | 502 |
+| `IMAGE_002` | Unsplash API 오류 | 502 |
+| `PUBLISH_001` | WordPress API 오류 | 502 |
+| `PUBLISH_002` | WordPress 인증 실패 | 401 |
+| `DB_001` | DB 연결 실패 | 503 |
+| `VALIDATION_ERROR` | 입력 검증 실패 | 422 |
+
+### 상세 가이드
+
+전체 에러 처리 가이드는 [docs/ERROR_HANDLING.md](docs/ERROR_HANDLING.md)를 참조하세요.
 
 ## 문제 해결
 
