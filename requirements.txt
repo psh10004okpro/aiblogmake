@@ -1,0 +1,84 @@
+# Web Framework
+fastapi==0.120.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+
+# Database
+sqlalchemy[asyncio]==2.0.35
+asyncpg==0.29.0
+alembic==1.13.3
+
+# Redis & Caching
+redis==5.0.8
+hiredis==2.3.2
+
+# Task Queue
+celery==5.4.0
+flower==2.0.1
+
+# API Clients
+openai==1.51.2
+anthropic==0.39.0
+google-ads==24.1.0
+google-api-python-client==2.149.0
+google-auth==2.35.0
+google-auth-oauthlib==1.2.1
+google-auth-httplib2==0.2.0
+pytrends==4.9.2
+requests==2.32.3
+aiohttp==3.10.9
+httpx==0.27.2
+
+# WordPress
+python-wordpress-xmlrpc==2.3
+
+# Web Scraping
+playwright==1.48.0
+beautifulsoup4==4.12.3
+lxml==5.3.0
+
+# Image Processing
+Pillow==10.4.0
+opencv-python-headless==4.10.0.84
+
+# Data Processing
+pandas==2.2.3
+numpy==2.1.2
+
+# SEO & Schema
+extruct==0.17.0
+htmlmin==0.1.12
+
+# Utilities
+python-dotenv==1.0.1
+pydantic==2.9.2
+pydantic-settings==2.6.0
+validators==0.34.0
+python-slugify==8.0.4
+python-dateutil==2.9.0.post0
+
+# Logging
+structlog==24.4.0
+colorama==0.4.6
+
+# Testing
+pytest==8.3.3
+pytest-asyncio==0.24.0
+pytest-cov==5.0.0
+httpx==0.27.2
+faker==30.8.2
+
+# Security
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+cryptography==43.0.1
+
+# Monitoring
+sentry-sdk[fastapi]==2.16.0
+
+# Development
+black==24.10.0
+flake8==7.1.1
+mypy==1.13.0
+isort==5.13.2
+pre-commit==4.0.1
