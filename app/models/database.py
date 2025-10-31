@@ -410,3 +410,102 @@ class SEOScore(Base):
 
     def __repr__(self) -> str:
         return f"<SEOScore(id={self.id}, post_id={self.post_id}, score={self.overall_score}, grade='{self.grade}')>"
+
+
+class WordPressSite(Base):
+    """WordPress 사이트 모델 - 멀티 블로그 관리"""
+
+    __tablename__ = "wordpress_sites"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False, index=True)
+    url = Column(String(500), nullable=False)
+    api_url = Column(String(500), nullable=False)
+    
+    # WordPress 인증 정보 (암호화 권장)
+    username = Column(String(255), nullable=False)
+    app_password = Column(String(255), nullable=False)  # Application Password
+    
+    # 사이트 설정
+    is_active = Column(Boolean, default=True, nullable=False)
+    default_category = Column(String(100), default="Uncategorized")
+    default_tags = Column(JSON)  # List of default tags
+    
+    # 자동 발행 설정
+    auto_publish = Column(Boolean, default=False)
+    publish_delay_minutes = Column(Integer, default=0)  # 발행 지연 시간
+    
+    # 통계
+    total_posts_published = Column(Integer, default=0)
+    last_published_at = Column(DateTime(timezone=True))
+    
+    # 사이트 메타데이터
+    description = Column(Text)
+    language = Column(String(10), default="ko")
+    timezone = Column(String(50), default="Asia/Seoul")
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
+    
+    # Relationships
+    site_posts = relationship("SitePost", back_populates="site", cascade="all, delete-orphan")
+    
+    # Indexes
+    __table_args__ = (
+        Index("ix_wordpress_sites_is_active", is_active),
+        Index("ix_wordpress_sites_name", name),
+    )
+    
+    def __repr__(self) -> str:
+        return f"<WordPressSite(id={self.id}, name='{self.name}', url='{self.url}', active={self.is_active})>"
+
+
+class SitePost(Base):
+    """사이트별 포스트 배포 추적 모델"""
+
+    __tablename__ = "site_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Foreign keys
+    site_id = Column(Integer, ForeignKey("wordpress_sites.id"), nullable=False, index=True)
+    post_id = Column(Integer, ForeignKey("posts.id"), nullable=False, index=True)
+    
+    # WordPress 데이터
+    wp_post_id = Column(Integer, index=True)
+    wp_url = Column(String(500))
+    wp_status = Column(String(20), default="draft")  # draft, published, scheduled
+    
+    # 발행 상태
+    status = Column(String(20), default="pending", nullable=False, index=True)  # pending, publishing, published, failed
+    scheduled_for = Column(DateTime(timezone=True))
+    published_at = Column(DateTime(timezone=True))
+    
+    # 오류 추적
+    error_message = Column(Text)
+    retry_count = Column(Integer, default=0)
+    max_retries = Column(Integer, default=3)
+    
+    # 성과 데이터 (Google Analytics 연동)
+    views = Column(Integer, default=0)
+    clicks = Column(Integer, default=0)
+    conversions = Column(Integer, default=0)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
+    
+    # Relationships
+    site = relationship("WordPressSite", back_populates="site_posts")
+    post = relationship("Post", backref="site_posts")
+    
+    # Indexes
+    __table_args__ = (
+        Index("ix_site_posts_site_status", site_id, status),
+        Index("ix_site_posts_post_id", post_id),
+        Index("ix_site_posts_scheduled", scheduled_for),
+    )
+    
+    def __repr__(self) -> str:
+        return f"<SitePost(id={self.id}, site_id={self.site_id}, post_id={self.post_id}, status='{self.status}')>"
