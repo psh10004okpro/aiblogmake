@@ -159,6 +159,10 @@ class Settings(BaseSettings):
     # Monitoring
     sentry_dsn: Optional[str] = Field(default=None, alias="SENTRY_DSN")
     sentry_traces_sample_rate: float = Field(default=0.1, alias="SENTRY_TRACES_SAMPLE_RATE")
+    sentry_profiles_sample_rate: float = Field(default=0.1, alias="SENTRY_PROFILES_SAMPLE_RATE")
+    app_version: str = Field(default="1.0.0", alias="APP_VERSION")
+    enable_metrics: bool = Field(default=True, alias="ENABLE_METRICS")
+    metrics_port: int = Field(default=8000, alias="METRICS_PORT")
 
     # Email Notifications
     smtp_host: Optional[str] = Field(default=None, alias="SMTP_HOST")

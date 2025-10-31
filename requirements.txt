@@ -75,6 +75,8 @@ cryptography==43.0.1
 
 # Monitoring
 sentry-sdk[fastapi]==2.16.0
+prometheus-client==0.20.0
+psutil==5.9.8
 
 # Development
 black==24.10.0
