@@ -191,6 +191,18 @@ class Settings(BaseSettings):
     smtp_from: Optional[str] = Field(default=None, alias="SMTP_FROM")
     notify_emails: Optional[str] = Field(default=None, alias="NOTIFY_EMAILS")
 
+    # Slack Notifications
+    slack_webhook_url: Optional[str] = Field(default=None, alias="SLACK_WEBHOOK_URL")
+    slack_channel: Optional[str] = Field(default=None, alias="SLACK_CHANNEL")
+
+    # Notification Feature Flags
+    enable_email_notifications: bool = Field(default=False, alias="ENABLE_EMAIL_NOTIFICATIONS")
+    enable_slack_notifications: bool = Field(default=False, alias="ENABLE_SLACK_NOTIFICATIONS")
+    notify_on_workflow_start: bool = Field(default=False, alias="NOTIFY_ON_WORKFLOW_START")
+    notify_on_workflow_complete: bool = Field(default=True, alias="NOTIFY_ON_WORKFLOW_COMPLETE")
+    notify_on_workflow_fail: bool = Field(default=True, alias="NOTIFY_ON_WORKFLOW_FAIL")
+    notify_on_post_publish: bool = Field(default=False, alias="NOTIFY_ON_POST_PUBLISH")
+
     # Feature Flags
     enable_keyword_research: bool = Field(default=True, alias="ENABLE_KEYWORD_RESEARCH")
     enable_auto_images: bool = Field(default=True, alias="ENABLE_AUTO_IMAGES")

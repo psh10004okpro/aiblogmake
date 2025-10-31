@@ -17,9 +17,11 @@ from app.services.content_generator import ContentGeneratorService
 from app.services.image_generator import ImageGeneratorService
 from app.services.ad_inserter import AdInserterService
 from app.services.publisher import WordPressPublisher
+from app.services.notifications import get_notification_service
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
+notification_service = get_notification_service()
 
 # Import celery_app from celery_tasks
 from app.tasks.celery_tasks import celery_app, run_async
@@ -196,6 +198,19 @@ def one_click_publish_task(
         seeds=seed_keywords,
         num_posts=num_posts
     )
+
+    # Send notification if enabled
+    if settings.notify_on_workflow_start:
+        try:
+            run_async(
+                notification_service.send_workflow_started(
+                    workflow_id=workflow_run_id,
+                    seed_keywords=seed_keywords,
+                    num_posts=num_posts
+                )
+            )
+        except Exception as e:
+            logger.warning("notification_failed", error=str(e))
 
     results = {
         "workflow_id": workflow_run_id,
@@ -417,6 +432,20 @@ def one_click_publish_task(
                         wp_post_id=wp_result["id"]
                     )
 
+                    # Send post published notification if enabled
+                    if settings.notify_on_post_publish and publish_immediately:
+                        try:
+                            run_async(
+                                notification_service.send_post_published(
+                                    keyword=keyword,
+                                    title=content_data["title"],
+                                    wp_url=wp_result["url"],
+                                    word_count=content_data["word_count"]
+                                )
+                            )
+                        except Exception as e:
+                            logger.warning("notification_failed", error=str(e))
+
                 except Exception as e:
                     error_msg = f"Failed to process post for keyword '{keyword}': {str(e)}"
                     logger.error("workflow_post_failed", keyword=keyword, error=error_msg)
@@ -458,6 +487,21 @@ def one_click_publish_task(
                 errors=results["statistics"]["errors"]
             )
 
+            # Send completion notification if enabled
+            if settings.notify_on_workflow_complete:
+                try:
+                    run_async(
+                        notification_service.send_workflow_completed(
+                            workflow_id=workflow_run_id,
+                            posts_created=results["statistics"]["posts_created"],
+                            posts_published=results["statistics"]["posts_published"],
+                            duration_seconds=duration,
+                            errors=results["statistics"]["errors"]
+                        )
+                    )
+                except Exception as e:
+                    logger.warning("notification_failed", error=str(e))
+
             return results
 
     except Exception as e:
@@ -479,6 +523,19 @@ def one_click_publish_task(
                 )
         except:
             pass
+
+        # Send failure notification if enabled
+        if settings.notify_on_workflow_fail:
+            try:
+                run_async(
+                    notification_service.send_workflow_failed(
+                        workflow_id=workflow_run_id,
+                        error=error_msg,
+                        current_step=results.get("current_step")
+                    )
+                )
+            except Exception as notify_error:
+                logger.warning("notification_failed", error=str(notify_error))
 
         results["errors"].append({"error": error_msg})
         results["statistics"]["errors"] += 1
