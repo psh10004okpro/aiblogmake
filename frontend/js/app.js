@@ -8,6 +8,7 @@ import Workflows from './components/Workflows.js';
 import SEOScores from './components/SEOScores.js';
 import Analytics from './components/Analytics.js';
 import SocialMedia from './components/SocialMedia.js';
+import ContentRepurposing from './components/ContentRepurposing.js';
 import Settings from './components/Settings.js';
 
 const { createApp } = Vue;
@@ -39,6 +40,7 @@ const app = createApp({
                 { id: 'seo', label: 'SEO 점수', icon: 'fa-chart-line' },
                 { id: 'analytics', label: 'Analytics', icon: 'fa-chart-bar' },
                 { id: 'social', label: '소셜 미디어', icon: 'fa-share-alt' },
+                { id: 'repurposing', label: '콘텐츠 재활용', icon: 'fa-recycle' },
                 { id: 'settings', label: '설정', icon: 'fa-cog' }
             ];
         }
@@ -205,6 +207,7 @@ const app = createApp({
         SEOScores,
         Analytics,
         SocialMedia,
+        ContentRepurposing,
         Settings
     },
 
@@ -273,6 +276,12 @@ const app = createApp({
                     <!-- Social Media Page -->
                     <SocialMedia
                         v-if="currentPage === 'social'"
+                        @show-toast="showToast"
+                    />
+
+                    <!-- Content Repurposing Page -->
+                    <ContentRepurposing
+                        v-if="currentPage === 'repurposing'"
                         @show-toast="showToast"
                     />
 

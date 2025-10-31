@@ -247,6 +247,46 @@ const api = {
     },
 
     /**
+     * Content Repurposing API
+     */
+    contentRepurposing: {
+        // Get available formats
+        async getFormats() {
+            return api.request('GET', '/content-repurposing/formats');
+        },
+
+        // Create YouTube script
+        async createYouTubeScript(data) {
+            return api.request('POST', '/content-repurposing/youtube-script', data);
+        },
+
+        // Create infographic data
+        async createInfographic(data) {
+            return api.request('POST', '/content-repurposing/infographic', data);
+        },
+
+        // Create social media cards
+        async createSocialMediaCards(data) {
+            return api.request('POST', '/content-repurposing/social-media-cards', data);
+        },
+
+        // Create podcast script
+        async createPodcastScript(data) {
+            return api.request('POST', '/content-repurposing/podcast-script', data);
+        },
+
+        // Create Twitter thread
+        async createTwitterThread(data) {
+            return api.request('POST', '/content-repurposing/twitter-thread', data);
+        },
+
+        // Batch convert to all formats
+        async batchConvert(data) {
+            return api.request('POST', '/content-repurposing/batch-convert', data);
+        }
+    },
+
+    /**
      * Health Check
      */
     async healthCheck() {
