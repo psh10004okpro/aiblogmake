@@ -31,6 +31,10 @@ from app.models.database import (
     ScheduledTask,
     SystemConfig,
     APILog,
+    WorkflowRun,
+    SEOScore,
+    WordPressSite,
+    SitePost,
 )
 
 # this is the Alembic Config object, which provides

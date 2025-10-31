@@ -279,10 +279,6 @@ class Settings(BaseSettings):
             return []
         return [email.strip() for email in self.notify_emails.split(",")]
 
-    class Config:
-        """Pydantic config."""
-        case_sensitive = False
-
 
 # Global settings instance
 settings = Settings()
