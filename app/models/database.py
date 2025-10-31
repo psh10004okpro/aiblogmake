@@ -304,3 +304,60 @@ class APILog(Base):
 
     def __repr__(self) -> str:
         return f"<APILog(id={self.id}, service='{self.service}', success={self.success})>"
+
+
+class WorkflowRun(Base):
+    """Workflow run model for tracking complete automation workflows."""
+
+    __tablename__ = "workflow_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    workflow_type = Column(String(50), nullable=False, index=True)  # one_click, scheduled, manual
+    celery_task_id = Column(String(255), unique=True, index=True)
+
+    # Configuration
+    seed_keywords = Column(JSON)  # List of seed keywords
+    num_posts = Column(Integer, default=1)
+    publish_immediately = Column(Boolean, default=False)
+    llm_provider = Column(String(20))  # claude, chatgpt, gemini
+
+    # Status tracking
+    status = Column(
+        String(20),
+        default="pending",
+        nullable=False,
+        index=True
+    )  # pending, running, completed, failed, cancelled
+    current_step = Column(String(50))  # Current step name
+    progress_percentage = Column(Integer, default=0)  # 0-100
+
+    # Step tracking (JSON with detailed progress)
+    steps = Column(JSON, default={})  # Dict of step_name: {status, started_at, completed_at, result, error}
+
+    # Results
+    keywords_researched = Column(Integer, default=0)
+    posts_created = Column(Integer, default=0)
+    posts_published = Column(Integer, default=0)
+    errors_count = Column(Integer, default=0)
+
+    # Detailed results
+    results = Column(JSON)  # Complete workflow results
+    errors = Column(JSON)  # List of errors that occurred
+
+    # Timing
+    started_at = Column(DateTime(timezone=True))
+    completed_at = Column(DateTime(timezone=True))
+    duration_seconds = Column(Float)
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
+
+    # Indexes
+    __table_args__ = (
+        Index("ix_workflow_runs_status_created", status, created_at.desc()),
+        Index("ix_workflow_runs_type_status", workflow_type, status),
+    )
+
+    def __repr__(self) -> str:
+        return f"<WorkflowRun(id={self.id}, type='{self.workflow_type}', status='{self.status}')>"

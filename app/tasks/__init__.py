@@ -1,7 +1,7 @@
 """
 Celery tasks module.
 
-This module exports all Celery tasks including periodic beat tasks.
+This module exports all Celery tasks including periodic beat tasks and workflow tasks.
 """
 
 from .celery_tasks import (
@@ -21,6 +21,13 @@ from .beat_tasks import (
     cleanup_old_tasks,
 )
 
+# Import workflow tasks for one-click automation
+from .workflow_tasks import (
+    one_click_publish_task,
+    get_workflow_status,
+    cancel_workflow,
+)
+
 __all__ = [
     "celery_app",
     "research_keywords_task",
@@ -32,4 +39,7 @@ __all__ = [
     "weekly_keyword_research",
     "hourly_health_check",
     "cleanup_old_tasks",
+    "one_click_publish_task",
+    "get_workflow_status",
+    "cancel_workflow",
 ]

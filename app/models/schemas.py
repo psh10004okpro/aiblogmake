@@ -305,3 +305,117 @@ class HealthCheckResponse(BaseModel):
     redis: bool
     celery: bool
     services: Dict[str, bool]
+
+
+# ===== Workflow Schemas (One-Click Automation) =====
+
+class WorkflowType(str, Enum):
+    """Workflow type enumeration."""
+    ONE_CLICK = "one_click"
+    SCHEDULED = "scheduled"
+    MANUAL = "manual"
+
+
+class WorkflowStatus(str, Enum):
+    """Workflow status enumeration."""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class OneClickPublishRequest(BaseModel):
+    """Request schema for one-click publish automation."""
+    seed_keywords: List[str] = Field(
+        ...,
+        min_length=1,
+        max_length=10,
+        description="Seed keywords to research and generate content from"
+    )
+    num_posts: int = Field(
+        default=1,
+        ge=1,
+        le=5,
+        description="Number of posts to create"
+    )
+    publish_immediately: bool = Field(
+        default=True,
+        description="Whether to publish immediately or save as draft"
+    )
+    llm_provider: Optional[str] = Field(
+        default=None,
+        description="LLM provider to use (claude, chatgpt, gemini)"
+    )
+
+    @field_validator("llm_provider")
+    @classmethod
+    def validate_llm_provider(cls, v: Optional[str]) -> Optional[str]:
+        """Validate LLM provider."""
+        if v is None:
+            return v
+        valid_providers = ["claude", "chatgpt", "gemini"]
+        if v.lower() not in valid_providers:
+            raise ValueError(f"Invalid LLM provider: {v}. Must be one of {valid_providers}")
+        return v.lower()
+
+
+class WorkflowStatistics(BaseModel):
+    """Workflow statistics."""
+    keywords_researched: int = 0
+    posts_created: int = 0
+    posts_published: int = 0
+    errors: int = 0
+
+
+class WorkflowPostResult(BaseModel):
+    """Result for a single post in workflow."""
+    keyword: str
+    title: Optional[str] = None
+    status: str  # success or failed
+    wp_post_id: Optional[int] = None
+    wp_url: Optional[str] = None
+    error: Optional[str] = None
+    steps: Dict[str, Any] = Field(default_factory=dict)
+
+
+class OneClickPublishResponse(BaseModel):
+    """Response schema for one-click publish automation."""
+    workflow_id: int
+    celery_task_id: str
+    status: str
+    message: str
+    estimated_duration_minutes: int = 5
+
+
+class WorkflowStatusResponse(BaseModel):
+    """Response schema for workflow status check."""
+    id: int
+    workflow_type: str
+    status: str
+    current_step: Optional[str] = None
+    progress_percentage: int
+    steps: Dict[str, Any] = Field(default_factory=dict)
+    statistics: WorkflowStatistics
+    results: Optional[Dict[str, Any]] = None
+    errors: Optional[List[Dict[str, Any]]] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    duration_seconds: Optional[float] = None
+    created_at: datetime
+
+
+class WorkflowCancelResponse(BaseModel):
+    """Response schema for workflow cancellation."""
+    success: bool
+    workflow_id: int
+    status: str
+    message: Optional[str] = None
+
+
+class WorkflowListResponse(BaseModel):
+    """Response schema for listing workflows."""
+    workflows: List[WorkflowStatusResponse]
+    total: int
+    page: int
+    page_size: int
