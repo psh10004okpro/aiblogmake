@@ -25,6 +25,10 @@ from app.core.errors import (
 )
 from app.api.routes import keywords, content, schedule
 from app.utils.logger import get_logger
+from app.monitoring.sentry import init_sentry
+from app.monitoring.metrics import PrometheusMiddleware, REGISTRY
+from app.monitoring.healthcheck import HealthCheckService
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 import time
 
 logger = get_logger(__name__)
@@ -39,6 +43,11 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("application_starting", env=settings.app_env)
+
+    # Initialize Sentry error tracking
+    if settings.enable_metrics:
+        init_sentry()
+        logger.info("sentry_initialized")
 
     # Initialize database
     try:
@@ -66,6 +75,10 @@ app = FastAPI(
 
 
 # Middleware
+# Prometheus metrics (first, to capture all requests)
+if settings.enable_metrics:
+    app.add_middleware(PrometheusMiddleware)
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -79,16 +92,16 @@ app.add_middleware(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
-# Request logging middleware
+# Request logging middleware (metrics middleware already logs timing)
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     """Log all HTTP requests."""
+    # Skip logging for metrics and health endpoints to reduce noise
+    if request.url.path in ["/metrics", "/health"]:
+        return await call_next(request)
+
     start_time = time.time()
-
-    # Process request
     response = await call_next(request)
-
-    # Calculate duration
     duration = time.time() - start_time
 
     logger.info(
@@ -120,31 +133,41 @@ app.include_router(schedule.router, prefix=settings.api_v1_prefix)
 @app.get("/health")
 async def health_check():
     """
-    Health check endpoint.
+    Advanced health check endpoint with detailed service status.
 
-    Returns application status and service availability.
+    Returns comprehensive health status including database, Redis,
+    disk space, and memory usage.
     """
-    from app.core.database import check_db_connection
+    health_service = HealthCheckService()
+    health_data = await health_service.check_health()
 
-    db_status = await check_db_connection()
-
-    health_data = {
-        "status": "healthy" if db_status else "degraded",
-        "version": "1.0.0",
-        "environment": settings.app_env,
-        "services": {
-            "database": db_status,
-            "redis": True,  # TODO: Implement Redis health check
-            "celery": True,  # TODO: Implement Celery health check
-        }
-    }
+    # Convert HealthStatus enum to string
+    health_data["status"] = health_data["status"].value
+    for service_name, service_data in health_data["services"].items():
+        service_data["status"] = service_data["status"].value
 
     status_code = (
-        status.HTTP_200_OK if db_status
+        status.HTTP_200_OK if health_data["status"] == "healthy"
         else status.HTTP_503_SERVICE_UNAVAILABLE
     )
 
     return JSONResponse(content=health_data, status_code=status_code)
+
+
+# Metrics endpoint for Prometheus
+@app.get("/metrics")
+async def metrics():
+    """
+    Prometheus metrics endpoint.
+
+    Returns all collected metrics in Prometheus format.
+    """
+    from fastapi.responses import Response
+
+    return Response(
+        content=generate_latest(REGISTRY),
+        media_type=CONTENT_TYPE_LATEST
+    )
 
 
 # Root endpoint
@@ -153,9 +176,11 @@ async def root():
     """Root endpoint with API information."""
     return {
         "name": settings.app_name,
-        "version": "1.0.0",
+        "version": settings.app_version,
+        "environment": settings.app_env,
         "docs": "/docs" if settings.debug else "disabled",
         "health": "/health",
+        "metrics": "/metrics" if settings.enable_metrics else "disabled",
         "api": settings.api_v1_prefix,
     }
 

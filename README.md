@@ -573,6 +573,63 @@ CI 실행 후 다음 아티팩트를 다운로드할 수 있습니다:
 
 자세한 CI/CD 가이드는 [docs/CICD.md](docs/CICD.md)를 참조하세요.
 
+## 📊 모니터링 및 관찰 가능성
+
+시스템은 포괄적인 모니터링 스택을 제공합니다:
+
+### Prometheus 메트릭
+
+- **HTTP 메트릭**: 요청 수, 응답 시간, 진행 중인 요청
+- **비즈니스 메트릭**: 키워드, 콘텐츠, 이미지, 포스트 생성 수
+- **성능 메트릭**: 생성 시간, 처리 시간 분포
+- **에러 메트릭**: 에러 수, API 에러 분류
+
+### Grafana 대시보드
+
+- **API Overview**: HTTP 메트릭, 요청/에러 비율, 응답 시간
+- **Business Metrics**: 키워드, 콘텐츠, 이미지, 발행 통계
+- **Performance**: 처리 시간, 대기열 상태
+
+### Sentry 에러 추적
+
+- 자동 에러 캡처 및 스택 트레이스
+- 성능 모니터링 (트랜잭션, 프로파일링)
+- 요청 컨텍스트 및 사용자 식별
+
+### 고급 헬스체크
+
+```bash
+# 헬스체크 엔드포인트
+curl http://localhost:8000/health
+
+# 응답 예시
+{
+  "status": "healthy",
+  "services": {
+    "database": {"status": "healthy", "latency_ms": 5.2},
+    "redis": {"status": "healthy", "latency_ms": 2.1},
+    "disk": {"percent_used": 45.2, "free_gb": 274},
+    "memory": {"percent_used": 62.3, "available_gb": 6.03}
+  }
+}
+```
+
+### 모니터링 시작
+
+```bash
+# Prometheus + Grafana + 모든 exporters 시작
+docker-compose up -d
+
+# 접속
+# Prometheus: http://localhost:9090
+# Grafana: http://localhost:3000 (admin/admin)
+# Metrics: http://localhost:8000/metrics
+```
+
+자세한 모니터링 가이드는 다음 문서를 참조하세요:
+- [docs/MONITORING.md](docs/MONITORING.md) - 모니터링 시스템 전체 가이드
+- [docs/MONITORING_INTEGRATION.md](docs/MONITORING_INTEGRATION.md) - FastAPI 통합 가이드
+
 ## 🛡️ 에러 처리
 
 시스템은 강화된 에러 처리를 제공합니다:
