@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Automation Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s;
+        }
+
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div id="app" v-cloak>
+        <!-- Navigation -->
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="flex-shrink-0 flex items-center">
+                            <h1 class="text-2xl font-bold text-indigo-600">
+                                <i class="fas fa-robot mr-2"></i>
+                                Blog Automation
+                            </h1>
+                        </div>
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a @click="currentPage = 'dashboard'"
+                               :class="currentPage === 'dashboard' ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                               class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer">
+                                <i class="fas fa-chart-line mr-2"></i>
+                                대시보드
+                            </a>
+                            <a @click="currentPage = 'workflows'"
+                               :class="currentPage === 'workflows' ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                               class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer">
+                                <i class="fas fa-project-diagram mr-2"></i>
+                                워크플로우
+                            </a>
+                            <a @click="currentPage = 'seo'"
+                               :class="currentPage === 'seo' ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                               class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer">
+                                <i class="fas fa-search mr-2"></i>
+                                SEO 점수
+                            </a>
+                            <a @click="currentPage = 'settings'"
+                               :class="currentPage === 'settings' ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                               class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer">
+                                <i class="fas fa-cog mr-2"></i>
+                                설정
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <button @click="refreshData"
+                                class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-sync-alt mr-2" :class="{'fa-spin': loading}"></i>
+                            새로고침
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <transition name="fade" mode="out-in">
+                <!-- Dashboard Page -->
+                <div v-if="currentPage === 'dashboard'" key="dashboard">
+                    <dashboard-component
+                        :stats="dashboardStats"
+                        :workflows="recentWorkflows"
+                        :seo-stats="seoStats"
+                        :loading="loading"
+                        @start-workflow="showWorkflowModal = true">
+                    </dashboard-component>
+                </div>
+
+                <!-- Workflows Page -->
+                <div v-else-if="currentPage === 'workflows'" key="workflows">
+                    <workflows-component
+                        :workflows="workflows"
+                        :loading="loading"
+                        @start-workflow="showWorkflowModal = true"
+                        @view-workflow="viewWorkflowDetails"
+                        @cancel-workflow="cancelWorkflow">
+                    </workflows-component>
+                </div>
+
+                <!-- SEO Scores Page -->
+                <div v-else-if="currentPage === 'seo'" key="seo">
+                    <seo-scores-component
+                        :scores="seoScores"
+                        :stats="seoStats"
+                        :loading="loading"
+                        @analyze-post="analyzePost">
+                    </seo-scores-component>
+                </div>
+
+                <!-- Settings Page -->
+                <div v-else-if="currentPage === 'settings'" key="settings">
+                    <settings-component
+                        :notifications="notificationSettings"
+                        @save-settings="saveSettings">
+                    </settings-component>
+                </div>
+            </transition>
+        </main>
+
+        <!-- Start Workflow Modal -->
+        <div v-if="showWorkflowModal"
+             class="fixed z-10 inset-0 overflow-y-auto"
+             aria-labelledby="modal-title"
+             role="dialog"
+             aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                     @click="showWorkflowModal = false"></div>
+
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                            <i class="fas fa-rocket mr-2"></i>
+                            새 워크플로우 시작
+                        </h3>
+
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700">시드 키워드 (쉼표로 구분)</label>
+                            <input v-model="newWorkflow.seedKeywords"
+                                   type="text"
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                   placeholder="블로그 SEO, 콘텐츠 마케팅, 디지털 마케팅">
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700">생성할 포스트 수</label>
+                            <input v-model.number="newWorkflow.numPosts"
+                                   type="number"
+                                   min="1"
+                                   max="5"
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700">LLM 제공자</label>
+                            <select v-model="newWorkflow.llmProvider"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="claude">Claude (기본)</option>
+                                <option value="chatgpt">ChatGPT</option>
+                                <option value="gemini">Gemini</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="flex items-center">
+                                <input v-model="newWorkflow.publishImmediately"
+                                       type="checkbox"
+                                       class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                <span class="ml-2 text-sm text-gray-700">즉시 발행</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button @click="startWorkflow"
+                                :disabled="workflowSubmitting"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                            <i class="fas fa-rocket mr-2" :class="{'fa-spin': workflowSubmitting}"></i>
+                            {{ workflowSubmitting ? '시작 중...' : '시작' }}
+                        </button>
+                        <button @click="showWorkflowModal = false"
+                                type="button"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            취소
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div v-if="toast.show"
+             class="fixed bottom-4 right-4 z-50 animate-fade-in">
+            <div :class="[
+                'rounded-lg shadow-lg p-4 max-w-sm',
+                toast.type === 'success' ? 'bg-green-500' :
+                toast.type === 'error' ? 'bg-red-500' :
+                toast.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+            ]">
+                <div class="flex items-center text-white">
+                    <i :class="[
+                        'fas mr-3',
+                        toast.type === 'success' ? 'fa-check-circle' :
+                        toast.type === 'error' ? 'fa-times-circle' :
+                        toast.type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'
+                    ]"></i>
+                    <span>{{ toast.message }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Components -->
+    <script src="/static/js/utils/api.js"></script>
+    <script src="/static/js/components/Dashboard.js"></script>
+    <script src="/static/js/components/Workflows.js"></script>
+    <script src="/static/js/components/SEOScores.js"></script>
+    <script src="/static/js/components/Settings.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

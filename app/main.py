@@ -7,12 +7,14 @@ middleware, and handles application lifecycle events.
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.exc import SQLAlchemyError
+from pathlib import Path
 from app.core.config import settings
 from app.core.database import init_db, close_db
 from app.core.exceptions import BlogAutomationException
@@ -132,6 +134,13 @@ app.include_router(notifications.router, prefix=settings.api_v1_prefix)
 app.include_router(seo.router, prefix=settings.api_v1_prefix)
 
 
+# Mount static files for frontend
+FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+    logger.info("frontend_static_files_mounted", path=str(FRONTEND_DIR))
+
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():
@@ -173,10 +182,30 @@ async def metrics():
     )
 
 
-# Root endpoint
+# Root endpoint - Serve frontend dashboard
 @app.get("/")
 async def root():
-    """Root endpoint with API information."""
+    """Root endpoint - serves the frontend dashboard."""
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file))
+    else:
+        # Fallback to API information if frontend not available
+        return {
+            "name": settings.app_name,
+            "version": settings.app_version,
+            "environment": settings.app_env,
+            "docs": "/docs" if settings.debug else "disabled",
+            "health": "/health",
+            "metrics": "/metrics" if settings.enable_metrics else "disabled",
+            "api": settings.api_v1_prefix,
+        }
+
+
+# API information endpoint
+@app.get("/api")
+async def api_info():
+    """API information endpoint."""
     return {
         "name": settings.app_name,
         "version": settings.app_version,
