@@ -156,6 +156,10 @@ class Settings(BaseSettings):
     publish_timezone: str = Field(default="Asia/Seoul", alias="PUBLISH_TIMEZONE")
     auto_publish_enabled: bool = Field(default=True, alias="AUTO_PUBLISH_ENABLED")
     post_frequency_days: int = Field(default=1, alias="POST_FREQUENCY_DAYS")
+    daily_auto_publish_keywords: str = Field(
+        default="블로그,SEO,마케팅,디지털마케팅,콘텐츠마케팅",
+        alias="DAILY_AUTO_PUBLISH_KEYWORDS"
+    )
 
     # Scraping Settings
     playwright_headless: bool = Field(default=True, alias="PLAYWRIGHT_HEADLESS")

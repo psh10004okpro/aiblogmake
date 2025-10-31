@@ -1,4 +1,4 @@
-.PHONY: help setup install run test test-unit test-integration test-e2e test-cov test-fast test-slow test-watch clean docker-up docker-down docker-logs migrate-up migrate-down migrate-current migrate-history
+.PHONY: help setup install run test test-unit test-integration test-e2e test-cov test-fast test-slow test-watch clean docker-up docker-down docker-logs migrate-up migrate-down migrate-current migrate-history celery-worker celery-beat celery-all celery-stop celery-flower celery-logs celery-status docker-celery-worker docker-celery-beat docker-celery-logs docker-flower
 
 help:
 	@echo "Blog Automation System - Available Commands"
@@ -38,6 +38,14 @@ help:
 	@echo "  make docker-logs       - View Docker logs"
 	@echo "  make docker-migrate    - Run migrations in Docker"
 	@echo "  make docker-test       - Run tests in Docker"
+	@echo ""
+	@echo "Celery Commands:"
+	@echo "  make celery-worker     - Start Celery worker locally"
+	@echo "  make celery-beat       - Start Celery Beat scheduler locally"
+	@echo "  make celery-all        - Start both worker and beat"
+	@echo "  make celery-stop       - Stop all Celery services"
+	@echo "  make celery-flower     - Start Flower (Celery monitoring)"
+	@echo "  make celery-logs       - View Celery logs"
 	@echo ""
 	@echo "  make clean             - Clean temporary files"
 
@@ -192,6 +200,57 @@ migrate-auto:
 migrate-init:
 	@bash scripts/migrate.sh init
 
+# ==================== Celery 명령어 ====================
+
+celery-worker:
+	@echo "👷 Starting Celery Worker..."
+	@bash scripts/start_celery_worker.sh
+
+celery-beat:
+	@echo "⏰ Starting Celery Beat..."
+	@bash scripts/start_celery_beat.sh
+
+celery-all:
+	@echo "🚀 Starting all Celery services..."
+	@bash scripts/start_celery_all.sh
+
+celery-stop:
+	@echo "🛑 Stopping all Celery services..."
+	@bash scripts/stop_celery_all.sh
+
+celery-flower:
+	@echo "🌸 Starting Flower (Celery monitoring)..."
+	@mkdir -p logs
+	celery -A app.tasks.celery_tasks flower --port=5555
+
+celery-logs:
+	@echo "📋 Viewing Celery logs..."
+	@tail -f logs/celery-*.log
+
+celery-status:
+	@echo "📊 Celery services status:"
+	@ps aux | grep -E "(celery worker|celery beat|flower)" | grep -v grep || echo "No Celery services running"
+
+# Docker Celery commands
+docker-celery-worker:
+	@echo "👷 Restarting Celery Worker in Docker..."
+	docker-compose restart celery-worker
+
+docker-celery-beat:
+	@echo "⏰ Restarting Celery Beat in Docker..."
+	docker-compose restart celery-beat
+
+docker-celery-logs:
+	@echo "📋 Viewing Celery logs in Docker..."
+	docker-compose logs -f celery-worker celery-beat
+
+docker-flower:
+	@echo "🌸 Opening Flower dashboard..."
+	@echo "Flower: http://localhost:5555"
+	@python -m webbrowser http://localhost:5555 || open http://localhost:5555 || xdg-open http://localhost:5555
+
+# ==================== Clean ====================
+
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
@@ -202,3 +261,5 @@ clean:
 	rm -rf htmlcov
 	rm -rf dist
 	rm -rf build
+	rm -f celery-worker.pid celery-beat.pid
+	rm -f celerybeat-schedule.db
