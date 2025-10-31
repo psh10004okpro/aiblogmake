@@ -1,14 +1,18 @@
 """
-Content generation service using Claude API.
+Content generation service with multi-LLM support.
 
 This service generates SEO-optimized Korean blog content following
 2025 Google SEO best practices and E-E-A-T principles.
+
+Supports multiple LLM providers:
+- Claude (Anthropic)
+- ChatGPT (OpenAI)
+- Gemini (Google)
 """
 
 import asyncio
 from typing import Dict, Any, List, Optional
 from datetime import datetime
-import anthropic
 from app.core.config import settings
 from app.utils.logger import get_logger
 from app.utils.seo import (
@@ -19,17 +23,27 @@ from app.utils.seo import (
     generate_blog_posting_schema,
     generate_faq_schema,
 )
+from app.services.llm import get_llm_provider, BaseLLMProvider
 
 logger = get_logger(__name__)
 
 
 class ContentGeneratorService:
-    """Service for generating SEO-optimized blog content."""
+    """Service for generating SEO-optimized blog content with multi-LLM support."""
 
-    def __init__(self):
-        """Initialize the content generator service."""
-        self.client = anthropic.AsyncAnthropic(
-            api_key=settings.anthropic_api_key
+    def __init__(self, provider: Optional[str] = None):
+        """
+        Initialize the content generator service.
+
+        Args:
+            provider: LLM provider name (claude, chatgpt, gemini).
+                     If None, uses default from settings.
+        """
+        self.provider = get_llm_provider(provider)
+        logger.info(
+            "content_generator_initialized",
+            provider=self.provider.provider_name,
+            model=self.provider.model
         )
 
     async def generate_content(
@@ -194,30 +208,28 @@ HTML 형식으로 작성해주세요. <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <
 """
 
         try:
-            response = await self.client.messages.create(
-                model=settings.claude_model,
-                max_tokens=settings.claude_max_tokens,
-                temperature=settings.claude_temperature,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
+            response = await self.provider.generate_with_retry(
+                prompt=prompt,
+                max_retries=3
             )
-
-            content = response.content[0].text
 
             logger.info(
-                "claude_content_generated",
+                "main_content_generated",
                 keyword=keyword,
-                tokens=response.usage.input_tokens + response.usage.output_tokens
+                provider=response.provider,
+                model=response.model,
+                tokens=response.tokens_used
             )
 
-            return content
+            return response.content
 
-        except anthropic.APIError as e:
-            logger.error("claude_api_error", error=str(e), keyword=keyword)
-            raise
         except Exception as e:
-            logger.error("content_generation_error", error=str(e), keyword=keyword)
+            logger.error(
+                "content_generation_error",
+                error=str(e),
+                keyword=keyword,
+                provider=self.provider.provider_name
+            )
             raise
 
     async def _generate_title(self, keyword: str, content: str) -> str:
@@ -251,18 +263,22 @@ HTML 형식으로 작성해주세요. <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <
 """
 
         try:
-            response = await self.client.messages.create(
-                model=settings.claude_model,
+            response = await self.provider.generate(
+                prompt=prompt,
                 max_tokens=100,
-                temperature=0.7,
-                messages=[{"role": "user", "content": prompt}]
+                temperature=0.7
             )
 
-            title = response.content[0].text.strip()
+            title = response.content.strip()
             return title
 
         except Exception as e:
-            logger.error("title_generation_error", error=str(e), keyword=keyword)
+            logger.error(
+                "title_generation_error",
+                error=str(e),
+                keyword=keyword,
+                provider=self.provider.provider_name
+            )
             return f"{keyword} - 완벽 가이드"
 
     async def _extract_headings(self, content: str) -> Dict[str, List[str]]:
@@ -322,18 +338,22 @@ FAQ 섹션만 출력하세요.
 """
 
         try:
-            response = await self.client.messages.create(
-                model=settings.claude_model,
+            response = await self.provider.generate(
+                prompt=prompt,
                 max_tokens=1000,
-                temperature=0.7,
-                messages=[{"role": "user", "content": prompt}]
+                temperature=0.7
             )
 
-            faq_html = response.content[0].text.strip()
+            faq_html = response.content.strip()
             return faq_html
 
         except Exception as e:
-            logger.error("faq_generation_error", error=str(e), keyword=keyword)
+            logger.error(
+                "faq_generation_error",
+                error=str(e),
+                keyword=keyword,
+                provider=self.provider.provider_name
+            )
             return None
 
     def _parse_faq_schema(self, faq_html: str) -> Optional[Dict[str, Any]]:
@@ -404,14 +424,13 @@ FAQ 섹션만 출력하세요.
 """
 
         try:
-            response = await self.client.messages.create(
-                model=settings.claude_model,
+            response = await self.provider.generate(
+                prompt=prompt,
                 max_tokens=200,
-                temperature=0.7,
-                messages=[{"role": "user", "content": prompt}]
+                temperature=0.7
             )
 
-            links_text = response.content[0].text.strip()
+            links_text = response.content.strip()
             links = [
                 line.strip().lstrip("-•*").strip()
                 for line in links_text.split("\n")
@@ -421,7 +440,11 @@ FAQ 섹션만 출력하세요.
             return links[:5]
 
         except Exception as e:
-            logger.error("internal_links_suggestion_error", error=str(e))
+            logger.error(
+                "internal_links_suggestion_error",
+                error=str(e),
+                provider=self.provider.provider_name
+            )
             return []
 
     async def enhance_content_naturally(self, content: str) -> str:
@@ -460,18 +483,25 @@ FAQ 섹션만 출력하세요.
 """
 
         try:
-            response = await self.client.messages.create(
-                model=settings.claude_model,
-                max_tokens=settings.claude_max_tokens,
-                temperature=0.8,  # Higher temperature for more creativity
-                messages=[{"role": "user", "content": prompt}]
+            response = await self.provider.generate(
+                prompt=prompt,
+                max_tokens=self.provider.max_tokens,
+                temperature=0.8  # Higher temperature for more creativity
             )
 
-            enhanced_content = response.content[0].text.strip()
+            enhanced_content = response.content.strip()
 
-            logger.info("content_enhanced_naturally")
+            logger.info(
+                "content_enhanced_naturally",
+                provider=self.provider.provider_name,
+                tokens=response.tokens_used
+            )
             return enhanced_content
 
         except Exception as e:
-            logger.error("content_enhancement_error", error=str(e))
+            logger.error(
+                "content_enhancement_error",
+                error=str(e),
+                provider=self.provider.provider_name
+            )
             return content  # Return original if enhancement fails

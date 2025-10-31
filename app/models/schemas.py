@@ -78,10 +78,25 @@ class ContentGenerationRequest(BaseModel):
     keyword: str = Field(..., min_length=1, max_length=255)
     target_word_count: int = Field(default=2000, ge=1500, le=3000)
     tone: str = Field(default="professional")
+    llm_provider: Optional[str] = Field(
+        default=None,
+        description="LLM provider (claude, chatgpt, gemini). Uses default if not specified."
+    )
     include_images: bool = Field(default=True)
     num_images: int = Field(default=4, ge=1, le=10)
     include_schema: bool = Field(default=True)
     include_faq: bool = Field(default=True)
+
+    @field_validator("llm_provider")
+    @classmethod
+    def validate_llm_provider(cls, v: Optional[str]) -> Optional[str]:
+        """Validate LLM provider."""
+        if v is None:
+            return v
+        valid_providers = ["claude", "chatgpt", "gemini"]
+        if v.lower() not in valid_providers:
+            raise ValueError(f"Invalid LLM provider: {v}. Must be one of {valid_providers}")
+        return v.lower()
 
 
 class ContentResponse(BaseModel):

@@ -19,7 +19,10 @@
 - **황금키워드 점수**: 데이터 기반 키워드 평가 시스템
 
 ### ✍️ SEO 최적화 콘텐츠 생성
-- **Claude 3.5 Sonnet**: 자연스러운 한국어 콘텐츠 생성
+- **멀티 LLM 지원**: Claude, ChatGPT, Gemini 중 선택 가능
+  - **Claude 3.5 Sonnet**: 자연스러운 한국어 콘텐츠 생성 (기본)
+  - **ChatGPT (GPT-4o)**: 빠르고 다양한 스타일 지원
+  - **Gemini 1.5 Pro**: 비용 효율적인 대량 생성
 - **E-E-A-T 원칙**: 2025 Google SEO 기준 준수
 - **구조화된 콘텐츠**: H1/H2/H3 계층, 내부 링크, FAQ
 - **스키마 마크업**: BlogPosting, FAQPage 자동 생성
@@ -51,7 +54,8 @@
 - **Cache/Queue**: Redis + Celery
 - **AI Services**:
   - Anthropic Claude API (콘텐츠 생성)
-  - OpenAI API (DALL-E 3, GPT-4 Vision)
+  - OpenAI API (ChatGPT, DALL-E 3, GPT-4 Vision)
+  - Google Gemini API (콘텐츠 생성)
 - **Web Scraping**: Playwright + BeautifulSoup4
 - **Image Processing**: Pillow
 - **Deployment**: Docker + Docker Compose
@@ -629,6 +633,60 @@ docker-compose up -d
 자세한 모니터링 가이드는 다음 문서를 참조하세요:
 - [docs/MONITORING.md](docs/MONITORING.md) - 모니터링 시스템 전체 가이드
 - [docs/MONITORING_INTEGRATION.md](docs/MONITORING_INTEGRATION.md) - FastAPI 통합 가이드
+
+## 🤖 멀티 LLM 지원
+
+시스템은 3가지 LLM 제공자를 지원합니다:
+
+### 지원하는 LLM
+- **Claude (Anthropic)**: 자연스러운 한국어 콘텐츠 생성 (기본)
+- **ChatGPT (OpenAI)**: 빠르고 다양한 스타일 지원
+- **Gemini (Google)**: 비용 효율적인 대량 생성
+
+### 사용 예시
+
+```bash
+# 기본 제공자로 콘텐츠 생성
+POST /api/v1/content/generate
+{
+  "keyword": "블로그 SEO 최적화",
+  "target_word_count": 2000
+}
+
+# ChatGPT로 콘텐츠 생성
+POST /api/v1/content/generate
+{
+  "keyword": "블로그 SEO 최적화",
+  "llm_provider": "chatgpt",
+  "target_word_count": 2000
+}
+
+# 사용 가능한 제공자 확인
+GET /api/v1/content/llm-providers
+```
+
+### 설정
+
+`.env` 파일에 API 키 추가:
+
+```bash
+# OpenAI (ChatGPT)
+OPENAI_API_KEY=sk-your-key
+CHATGPT_MODEL=gpt-4o
+
+# Anthropic (Claude)
+ANTHROPIC_API_KEY=sk-ant-your-key
+CLAUDE_MODEL=claude-3-5-sonnet-20241022
+
+# Google (Gemini)
+GEMINI_API_KEY=your-key
+GEMINI_MODEL=gemini-1.5-pro-latest
+
+# 기본 제공자
+DEFAULT_LLM_PROVIDER=claude
+```
+
+자세한 내용은 [docs/MULTI_LLM_SUPPORT.md](docs/MULTI_LLM_SUPPORT.md)를 참조하세요.
 
 ## 🛡️ 에러 처리
 

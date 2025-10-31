@@ -35,10 +35,44 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/content", tags=["content"])
 
 
+@router.get("/llm-providers")
+async def list_llm_providers():
+    """
+    List available LLM providers and their configuration status.
+
+    Returns information about which LLM providers are available
+    based on API key configuration.
+    """
+    from app.services.llm.factory import LLMProviderFactory
+    from app.core.config import settings
+
+    providers = LLMProviderFactory.list_available_providers()
+
+    return {
+        "default_provider": settings.default_llm_provider,
+        "providers": {
+            "claude": {
+                "available": providers["claude"],
+                "model": settings.claude_model if providers["claude"] else None,
+                "description": "Anthropic Claude - Best for natural Korean content"
+            },
+            "chatgpt": {
+                "available": providers["chatgpt"],
+                "model": settings.chatgpt_model if providers["chatgpt"] else None,
+                "description": "OpenAI ChatGPT - Versatile and fast"
+            },
+            "gemini": {
+                "available": providers["gemini"],
+                "model": settings.gemini_model if providers["gemini"] else None,
+                "description": "Google Gemini - Powerful and multilingual"
+            }
+        }
+    }
+
+
 @router.post("/generate", response_model=ContentResponse)
 async def generate_content(
-    request: ContentGenerationRequest,
-    content_service: ContentGeneratorService = Depends(get_content_service)
+    request: ContentGenerationRequest
 ):
     """
     Generate SEO-optimized content for a keyword.
@@ -49,10 +83,20 @@ async def generate_content(
     - Internal link suggestions
     - FAQ section (optional)
     - Schema markup
+
+    You can specify the LLM provider (claude, chatgpt, gemini) in the request.
+    If not specified, the default provider from settings will be used.
     """
-    logger.info("content_generation_requested", keyword=request.keyword)
+    logger.info(
+        "content_generation_requested",
+        keyword=request.keyword,
+        provider=request.llm_provider or "default"
+    )
 
     try:
+        # Create content service with specified provider
+        content_service = ContentGeneratorService(provider=request.llm_provider)
+
         content = await content_service.generate_content(
             keyword=request.keyword,
             target_word_count=request.target_word_count,
@@ -62,6 +106,13 @@ async def generate_content(
 
         return ContentResponse(**content)
 
+    except ValueError as e:
+        # Provider configuration errors
+        logger.error("invalid_provider_configuration", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except Exception as e:
         logger.error("content_generation_failed", error=str(e))
         raise HTTPException(

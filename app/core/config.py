@@ -62,9 +62,15 @@ class Settings(BaseSettings):
     # OpenAI API
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     openai_org_id: Optional[str] = Field(default=None, alias="OPENAI_ORG_ID")
+    # ChatGPT for content generation
+    chatgpt_model: str = Field(default="gpt-4o", alias="CHATGPT_MODEL")
+    chatgpt_max_tokens: int = Field(default=4000, alias="CHATGPT_MAX_TOKENS")
+    chatgpt_temperature: float = Field(default=0.7, alias="CHATGPT_TEMPERATURE")
+    # DALL-E for image generation
     dalle_model: str = Field(default="dall-e-3", alias="DALLE_MODEL")
     dalle_size: str = Field(default="1792x1024", alias="DALLE_SIZE")
     dalle_quality: str = Field(default="hd", alias="DALLE_QUALITY")
+    # GPT-4 Vision for alt text
     gpt_vision_model: str = Field(default="gpt-4-vision-preview", alias="GPT_VISION_MODEL")
 
     # Anthropic API
@@ -72,6 +78,15 @@ class Settings(BaseSettings):
     claude_model: str = Field(default="claude-3-5-sonnet-20241022", alias="CLAUDE_MODEL")
     claude_max_tokens: int = Field(default=4000, alias="CLAUDE_MAX_TOKENS")
     claude_temperature: float = Field(default=0.7, alias="CLAUDE_TEMPERATURE")
+
+    # Google Gemini API
+    gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
+    gemini_model: str = Field(default="gemini-1.5-pro-latest", alias="GEMINI_MODEL")
+    gemini_max_tokens: int = Field(default=4000, alias="GEMINI_MAX_TOKENS")
+    gemini_temperature: float = Field(default=0.7, alias="GEMINI_TEMPERATURE")
+
+    # Default LLM Provider for content generation
+    default_llm_provider: str = Field(default="claude", alias="DEFAULT_LLM_PROVIDER")
 
     # Google Ads API
     google_ads_developer_token: str = Field(default="", alias="GOOGLE_ADS_DEVELOPER_TOKEN")
@@ -195,6 +210,15 @@ class Settings(BaseSettings):
         valid_envs = ["development", "staging", "production"]
         if v.lower() not in valid_envs:
             raise ValueError(f"Invalid environment: {v}. Must be one of {valid_envs}")
+        return v.lower()
+
+    @field_validator("default_llm_provider")
+    @classmethod
+    def validate_llm_provider(cls, v: str) -> str:
+        """Validate LLM provider."""
+        valid_providers = ["claude", "chatgpt", "gemini"]
+        if v.lower() not in valid_providers:
+            raise ValueError(f"Invalid LLM provider: {v}. Must be one of {valid_providers}")
         return v.lower()
 
     @property
