@@ -156,6 +156,62 @@ const api = {
     },
 
     /**
+     * Analytics API
+     */
+    analytics: {
+        // Get analytics status
+        async getStatus() {
+            return api.request('GET', '/analytics/status');
+        },
+
+        // Get overview metrics
+        async getOverview(startDate = '30daysAgo', endDate = 'today') {
+            return api.request('GET', '/analytics/overview', { start_date: startDate, end_date: endDate });
+        },
+
+        // Get realtime metrics
+        async getRealtime() {
+            return api.request('GET', '/analytics/realtime');
+        },
+
+        // Get traffic sources
+        async getTrafficSources(startDate = '30daysAgo', endDate = 'today', limit = 10) {
+            return api.request('GET', '/analytics/traffic-sources', {
+                start_date: startDate,
+                end_date: endDate,
+                limit
+            });
+        },
+
+        // Get top posts
+        async getTopPosts(startDate = '30daysAgo', endDate = 'today', limit = 10) {
+            return api.request('GET', '/analytics/top-posts', {
+                start_date: startDate,
+                end_date: endDate,
+                limit
+            });
+        },
+
+        // Get post performance
+        async getPostPerformance(postPath, startDate = '30daysAgo', endDate = 'today') {
+            return api.request('GET', `/analytics/post/${postPath}`, {
+                start_date: startDate,
+                end_date: endDate
+            });
+        },
+
+        // Get comparison data
+        async getComparison(currentStart = '30daysAgo', currentEnd = 'today', previousStart = '60daysAgo', previousEnd = '31daysAgo') {
+            return api.request('GET', '/analytics/comparison', {
+                current_start: currentStart,
+                current_end: currentEnd,
+                previous_start: previousStart,
+                previous_end: previousEnd
+            });
+        }
+    },
+
+    /**
      * Health Check
      */
     async healthCheck() {

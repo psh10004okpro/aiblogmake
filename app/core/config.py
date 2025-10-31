@@ -117,6 +117,11 @@ class Settings(BaseSettings):
     adsense_ad_slot_sidebar: str = Field(default="", alias="ADSENSE_AD_SLOT_SIDEBAR")
     adsense_auto_ads: bool = Field(default=True, alias="ADSENSE_AUTO_ADS")
 
+    # Google Analytics Configuration
+    ga_property_id: Optional[str] = Field(default=None, alias="GA_PROPERTY_ID")
+    ga_credentials_path: Optional[str] = Field(default=None, alias="GA_CREDENTIALS_PATH")
+    ga_cache_ttl: int = Field(default=300, alias="GA_CACHE_TTL")  # 5 minutes
+
     # Content Generation Settings
     min_content_length: int = Field(default=1500, alias="MIN_CONTENT_LENGTH")
     max_content_length: int = Field(default=3000, alias="MAX_CONTENT_LENGTH")
