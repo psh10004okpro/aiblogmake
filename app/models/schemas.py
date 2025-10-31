@@ -419,3 +419,80 @@ class WorkflowListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+# ===== SEO Schemas =====
+
+class SEOIssue(BaseModel):
+    """SEO issue detail."""
+    severity: str  # high, medium, low
+    category: str
+    message: str
+
+
+class SEOMetrics(BaseModel):
+    """Detailed SEO metrics."""
+    keyword_density: Optional[Dict[str, Any]] = None
+    title: Optional[Dict[str, Any]] = None
+    meta_tags: Optional[Dict[str, Any]] = None
+    readability: Optional[Dict[str, Any]] = None
+    internal_links: Optional[Dict[str, Any]] = None
+    images: Optional[Dict[str, Any]] = None
+    overall: Optional[Dict[str, Any]] = None
+
+
+class SEOAnalysisRequest(BaseModel):
+    """Request schema for SEO analysis."""
+    title: str = Field(..., min_length=1, max_length=500)
+    content: str = Field(..., min_length=100)
+    meta_description: str = Field(..., max_length=200)
+    target_keyword: str = Field(..., min_length=1, max_length=255)
+    h1_tag: Optional[str] = None
+    h2_tags: Optional[List[str]] = None
+    h3_tags: Optional[List[str]] = None
+    internal_links: Optional[List[str]] = None
+    images: Optional[List[Dict[str, str]]] = None
+
+
+class SEOScoreResponse(BaseModel):
+    """Response schema for SEO score."""
+    overall_score: float
+    grade: str
+    keyword_density_score: float
+    title_optimization_score: float
+    meta_tags_score: float
+    readability_score: float
+    internal_links_score: float
+    image_alt_score: float
+    issues: List[SEOIssue]
+    suggestions: List[str]
+    metrics: SEOMetrics
+
+
+class SEOScoreDetail(BaseModel):
+    """Detailed SEO score with metadata."""
+    id: int
+    post_id: int
+    overall_score: float
+    grade: str
+    keyword_density_score: float
+    title_optimization_score: float
+    meta_tags_score: float
+    readability_score: float
+    internal_links_score: float
+    image_alt_score: float
+    issues: List[Dict[str, Any]]
+    suggestions: List[str]
+    metrics: Dict[str, Any]
+    target_keyword: str
+    analyzed_at: datetime
+    analyzer_version: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class PostWithSEO(PostResponse):
+    """Post response with SEO score."""
+    seo_score: Optional[SEOScoreDetail] = None

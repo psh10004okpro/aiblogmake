@@ -361,3 +361,52 @@ class WorkflowRun(Base):
 
     def __repr__(self) -> str:
         return f"<WorkflowRun(id={self.id}, type='{self.workflow_type}', status='{self.status}')>"
+
+
+class SEOScore(Base):
+    """SEO score model for content quality tracking."""
+
+    __tablename__ = "seo_scores"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("posts.id"), unique=True, nullable=False, index=True)
+
+    # Overall score
+    overall_score = Column(Float, nullable=False, index=True)
+    grade = Column(String(5))  # A+, A, B+, B, C+, C, D, F
+
+    # Component scores
+    keyword_density_score = Column(Float, nullable=False)
+    title_optimization_score = Column(Float, nullable=False)
+    meta_tags_score = Column(Float, nullable=False)
+    readability_score = Column(Float, nullable=False)
+    internal_links_score = Column(Float, nullable=False)
+    image_alt_score = Column(Float, nullable=False)
+
+    # Issues and suggestions
+    issues = Column(JSON)  # List of issues found
+    suggestions = Column(JSON)  # List of improvement suggestions
+
+    # Detailed metrics
+    metrics = Column(JSON)  # Detailed analysis metrics
+
+    # Analysis metadata
+    target_keyword = Column(String(255))
+    analyzed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    analyzer_version = Column(String(20), default="1.0")
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
+
+    # Relationship
+    post = relationship("Post", backref="seo_score")
+
+    # Indexes
+    __table_args__ = (
+        Index("ix_seo_scores_overall_score_desc", overall_score.desc()),
+        Index("ix_seo_scores_post_id_analyzed", post_id, analyzed_at.desc()),
+    )
+
+    def __repr__(self) -> str:
+        return f"<SEOScore(id={self.id}, post_id={self.post_id}, score={self.overall_score}, grade='{self.grade}')>"
