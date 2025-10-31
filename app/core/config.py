@@ -208,6 +208,26 @@ class Settings(BaseSettings):
     notify_on_workflow_fail: bool = Field(default=True, alias="NOTIFY_ON_WORKFLOW_FAIL")
     notify_on_post_publish: bool = Field(default=False, alias="NOTIFY_ON_POST_PUBLISH")
 
+    # Social Media Configuration
+    # Facebook
+    facebook_page_id: Optional[str] = Field(default=None, alias="FACEBOOK_PAGE_ID")
+    facebook_access_token: Optional[str] = Field(default=None, alias="FACEBOOK_ACCESS_TOKEN")
+
+    # Twitter (X)
+    twitter_api_key: Optional[str] = Field(default=None, alias="TWITTER_API_KEY")
+    twitter_api_secret: Optional[str] = Field(default=None, alias="TWITTER_API_SECRET")
+    twitter_access_token: Optional[str] = Field(default=None, alias="TWITTER_ACCESS_TOKEN")
+    twitter_access_secret: Optional[str] = Field(default=None, alias="TWITTER_ACCESS_SECRET")
+
+    # LinkedIn
+    linkedin_access_token: Optional[str] = Field(default=None, alias="LINKEDIN_ACCESS_TOKEN")
+    linkedin_organization_id: Optional[str] = Field(default=None, alias="LINKEDIN_ORGANIZATION_ID")
+
+    # Social Media Feature Flags
+    enable_social_auto_post: bool = Field(default=False, alias="ENABLE_SOCIAL_AUTO_POST")
+    social_auto_post_on_publish: bool = Field(default=True, alias="SOCIAL_AUTO_POST_ON_PUBLISH")
+    social_platforms: str = Field(default="facebook,twitter,linkedin", alias="SOCIAL_PLATFORMS")
+
     # Feature Flags
     enable_keyword_research: bool = Field(default=True, alias="ENABLE_KEYWORD_RESEARCH")
     enable_auto_images: bool = Field(default=True, alias="ENABLE_AUTO_IMAGES")

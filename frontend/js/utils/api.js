@@ -212,6 +212,41 @@ const api = {
     },
 
     /**
+     * Social Media API
+     */
+    socialMedia: {
+        // Get status
+        async getStatus() {
+            return api.request('GET', '/social-media/status');
+        },
+
+        // Post to social media
+        async post(data) {
+            return api.request('POST', '/social-media/post', data);
+        },
+
+        // Post to specific platform
+        async postToPlatform(platform, data) {
+            return api.request('POST', `/social-media/post/${platform}`, data);
+        },
+
+        // Generate message
+        async generateMessage(data) {
+            return api.request('POST', '/social-media/generate-message', data);
+        },
+
+        // Generate hashtags
+        async generateHashtags(data) {
+            return api.request('POST', '/social-media/generate-hashtags', data);
+        },
+
+        // Test post
+        async test() {
+            return api.request('POST', '/social-media/test');
+        }
+    },
+
+    /**
      * Health Check
      */
     async healthCheck() {

@@ -25,7 +25,7 @@ from app.core.errors import (
     sqlalchemy_exception_handler,
     general_exception_handler,
 )
-from app.api.routes import keywords, content, schedule, workflow, notifications, seo, analytics
+from app.api.routes import keywords, content, schedule, workflow, notifications, seo, analytics, social_media
 from app.utils.logger import get_logger
 from app.monitoring.sentry import init_sentry
 from app.monitoring.metrics import PrometheusMiddleware, REGISTRY
@@ -133,6 +133,7 @@ app.include_router(workflow.router, prefix=settings.api_v1_prefix)
 app.include_router(notifications.router, prefix=settings.api_v1_prefix)
 app.include_router(seo.router, prefix=settings.api_v1_prefix)
 app.include_router(analytics.router, prefix=settings.api_v1_prefix)
+app.include_router(social_media.router, prefix=settings.api_v1_prefix)
 
 
 # Mount static files for frontend
