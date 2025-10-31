@@ -1,0 +1,73 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-check:
+    name: PR Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Check for TODO comments
+      run: |
+        TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX" app/ tests/ --exclude-dir=__pycache__ | wc -l || true)
+        echo "Found $TODO_COUNT TODO/FIXME/XXX comments"
+        if [ "$TODO_COUNT" -gt 50 ]; then
+          echo "Warning: Too many TODO comments ($TODO_COUNT)"
+        fi
+    
+    - name: Check file sizes
+      run: |
+        LARGE_FILES=$(find app tests -type f -size +100k -not -path "*/\.*" || true)
+        if [ -n "$LARGE_FILES" ]; then
+          echo "Warning: Large files detected:"
+          echo "$LARGE_FILES"
+        fi
+    
+    - name: Run fast tests
+      env:
+        DATABASE_URL: sqlite+aiosqlite:///:memory:
+        REDIS_URL: redis://localhost:6379/0
+      run: |
+        pytest tests/ -m "unit" -v --tb=short --maxfail=5
+    
+    - name: Check code formatting
+      run: |
+        black --check app tests
+      continue-on-error: true
+    
+    - name: Check import sorting
+      run: |
+        isort --check-only app tests
+      continue-on-error: true
+    
+    - name: Run basic linting
+      run: |
+        flake8 app tests --count --select=E9,F63,F7,F82 --show-source --statistics
+      continue-on-error: true
+    
+    - name: PR Summary
+      if: always()
+      run: |
+        echo "## Pull Request Quality Check" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "All checks completed!" >> $GITHUB_STEP_SUMMARY

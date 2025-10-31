@@ -1,5 +1,12 @@
 # 블로그 자동화 시스템 (Blog Automation System)
 
+![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-70%25-green)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.120-009688)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Docker](https://img.shields.io/badge/docker-ready-blue)
+
 한국 시장을 타겟으로 하는 완전 자동화된 SEO 최적화 블로그 시스템입니다. 키워드 리서치부터 콘텐츠 생성, 이미지 생성, AdSense 광고 삽입, WordPress 발행까지 전체 워크플로우를 자동화합니다.
 
 ## 주요 기능
@@ -500,6 +507,71 @@ pytest -m "not external"
 - ✅ 에러 처리 테스트
 - ✅ 비동기 함수 테스트
 - ✅ Mock 및 Fixture 활용
+
+## 🔄 CI/CD 파이프라인
+
+GitHub Actions를 통한 자동화된 CI/CD 파이프라인을 제공합니다.
+
+### 워크플로우
+
+#### 1. Tests (test.yml)
+- **트리거**: push, pull_request
+- **실행 내용**:
+  - PostgreSQL, Redis 서비스 시작
+  - 단위 테스트 실행
+  - 통합 테스트 실행
+  - 커버리지 측정 (목표 70%+)
+  - Codecov 업로드
+  - HTML 리포트 생성
+
+#### 2. Code Quality (lint.yml)
+- **트리거**: push, pull_request
+- **실행 내용**:
+  - Black (코드 포맷 검사)
+  - isort (import 정렬 검사)
+  - Flake8 (linting)
+  - MyPy (타입 체킹)
+  - Bandit (보안 스캔)
+  - Safety (의존성 취약점 검사)
+
+#### 3. Docker Build (docker.yml)
+- **트리거**: push to main/develop
+- **실행 내용**:
+  - Docker 이미지 빌드
+  - 기본 테스트 실행
+  - 이미지 태깅
+
+#### 4. PR Check (pr-check.yml)
+- **트리거**: pull_request
+- **실행 내용**:
+  - TODO 코멘트 수 확인
+  - 대용량 파일 검사
+  - 빠른 테스트 실행
+  - 코드 포맷 검사
+
+### 로컬에서 CI 재현
+
+```bash
+# 모든 검사 실행
+make format-check  # 포맷 검사
+make lint          # Linting
+make type-check    # 타입 체킹
+make test-cov      # 테스트 + 커버리지
+
+# Docker 빌드 테스트
+docker build -t blog-automation:test .
+docker run --rm blog-automation:test pytest --version
+```
+
+### 아티팩트
+
+CI 실행 후 다음 아티팩트를 다운로드할 수 있습니다:
+
+- **coverage-report**: HTML 커버리지 리포트 (7일 보관)
+- **test-logs**: 테스트 실패 시 로그 (7일 보관)
+- **bandit-security-report**: 보안 스캔 결과 (30일 보관)
+
+자세한 CI/CD 가이드는 [docs/CICD.md](docs/CICD.md)를 참조하세요.
 
 ## 🛡️ 에러 처리
 

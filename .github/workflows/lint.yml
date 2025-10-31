@@ -1,0 +1,74 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop, claude/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run Black (code formatting check)
+      run: |
+        black --check app tests
+      continue-on-error: true
+    
+    - name: Run isort (import sorting check)
+      run: |
+        isort --check-only app tests
+      continue-on-error: true
+    
+    - name: Run Flake8 (linting)
+      run: |
+        flake8 app tests --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 app tests --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      continue-on-error: true
+    
+    - name: Run MyPy (type checking)
+      run: |
+        mypy app --ignore-missing-imports --no-strict-optional
+      continue-on-error: true
+    
+    - name: Check for security issues with Bandit
+      run: |
+        pip install bandit
+        bandit -r app -f json -o bandit-report.json || true
+      continue-on-error: true
+    
+    - name: Upload Bandit report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: bandit-security-report
+        path: bandit-report.json
+        retention-days: 30
+    
+    - name: Check dependencies for security vulnerabilities
+      run: |
+        pip install safety
+        safety check --json || true
+      continue-on-error: true
+    
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Code Quality Check Complete" >> $GITHUB_STEP_SUMMARY
+        echo "Check individual steps for details" >> $GITHUB_STEP_SUMMARY
