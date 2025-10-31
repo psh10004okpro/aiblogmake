@@ -386,21 +386,120 @@ score = (
 - ✅ FAQ 스키마 (선택)
 - ✅ Open Graph / Twitter Cards
 
-## 테스트
+## 🧪 테스트
+
+시스템은 포괄적인 테스트 커버리지(목표 70%+)를 제공합니다.
+
+### 빠른 시작
 
 ```bash
 # 모든 테스트 실행
-pytest
+make test
 
-# 커버리지 포함
-pytest --cov=app --cov-report=html
+# 커버리지 포함 테스트
+make test-cov
 
-# 특정 테스트만
-pytest tests/test_keywords.py
-
-# 에러 핸들링 테스트
-pytest tests/test_exceptions.py -v
+# HTML 커버리지 리포트 열기
+make test-cov-report
 ```
+
+### 테스트 종류별 실행
+
+```bash
+# 단위 테스트만
+make test-unit
+
+# 통합 테스트만
+make test-integration
+
+# E2E 테스트만
+make test-e2e
+
+# 서비스 레이어 테스트
+make test-service
+
+# API 엔드포인트 테스트
+make test-api
+
+# 빠른 테스트 (slow, external 제외)
+make test-fast
+```
+
+### 고급 테스트 옵션
+
+```bash
+# 실패한 테스트만 재실행
+make test-failed
+
+# 상세 출력
+make test-verbose
+
+# 병렬 실행
+make test-parallel
+
+# Watch 모드 (코드 변경 시 자동 재실행)
+make test-watch
+```
+
+### Docker에서 테스트
+
+```bash
+# Docker 컨테이너에서 테스트 실행
+make docker-test
+
+# Docker에서 커버리지 포함
+make docker-test-cov
+```
+
+### 테스트 구조
+
+```
+tests/
+├── conftest.py              # 공통 픽스처 및 설정
+├── test_keywords.py         # KeywordResearchService (40+ 테스트)
+├── test_content_generator.py # ContentGeneratorService (30+ 테스트)
+├── test_image_generator.py  # ImageGeneratorService (25+ 테스트)
+├── test_exceptions.py       # 예외 처리 (50+ 테스트)
+└── logs/                    # 테스트 로그
+```
+
+### 테스트 마커
+
+pytest 마커를 사용하여 특정 테스트 그룹을 실행할 수 있습니다:
+
+```bash
+# 단위 테스트만
+pytest -m unit
+
+# 통합 테스트만
+pytest -m integration
+
+# 느린 테스트 제외
+pytest -m "not slow"
+
+# 외부 API 테스트 제외
+pytest -m "not external"
+```
+
+### 커버리지 리포트
+
+테스트 실행 후 커버리지 리포트가 생성됩니다:
+
+- **HTML 리포트**: `htmlcov/index.html`
+- **터미널 출력**: 누락된 라인 표시
+- **XML 리포트**: `coverage.xml` (CI/CD용)
+
+### 테스트 작성 가이드
+
+자세한 테스트 작성 가이드는 [docs/TESTING.md](docs/TESTING.md)를 참조하세요.
+
+**테스트 포함 내용:**
+- ✅ 단위 테스트 (빠른 실행, 외부 의존성 없음)
+- ✅ 통합 테스트 (서비스 간 상호작용)
+- ✅ API 엔드포인트 테스트
+- ✅ 에러 처리 테스트
+- ✅ 비동기 함수 테스트
+- ✅ Mock 및 Fixture 활용
 
 ## 🛡️ 에러 처리
 

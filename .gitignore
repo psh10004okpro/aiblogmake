@@ -42,9 +42,17 @@ env/
 # Testing
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 *.cover
 .hypothesis/
+coverage.xml
+coverage.json
+.tox/
+.nox/
+tests/logs/*.log
+tests/logs/*.txt
+!tests/logs/.gitkeep
 
 # Logs
 *.log

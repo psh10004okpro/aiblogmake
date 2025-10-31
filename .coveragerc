@@ -1,0 +1,92 @@
+# Coverage.py 설정 파일
+
+[run]
+# 소스 코드 경로
+source = app
+
+# 실행할 브랜치 커버리지
+branch = True
+
+# 병렬 실행 지원
+parallel = True
+
+# 생략할 파일 패턴
+omit =
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */venv/*
+    */env/*
+    */.venv/*
+    */alembic/*
+    */migrations/*
+    app/main.py
+    app/__init__.py
+
+# 동적 컨텍스트
+dynamic_context = test_function
+
+[report]
+# 최소 커버리지 퍼센티지
+fail_under = 70
+
+# 커버되지 않은 라인 표시
+show_missing = True
+
+# 소수점 자릿수
+precision = 2
+
+# 건너뛸 파일 (empty files)
+skip_empty = True
+
+# 커버리지가 낮은 파일 정렬
+sort = Cover
+
+# 제외할 라인 패턴
+exclude_lines =
+    # 표준 제외 패턴
+    pragma: no cover
+    
+    # 디버그 코드
+    def __repr__
+    def __str__
+    
+    # 추상 메서드
+    raise AssertionError
+    raise NotImplementedError
+    
+    # 타입 체킹 블록
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+    
+    # 메인 블록
+    if __name__ == .__main__.:
+    
+    # 방어적 코드
+    except Exception
+    except:
+    
+    # 로깅 라인 (선택적)
+    logger\.
+    
+    # pass 문
+    pass
+    
+    # 엘립시스
+    \.\.\.
+
+[html]
+# HTML 리포트 디렉토리
+directory = htmlcov
+
+# 제목
+title = Blog Automation Test Coverage Report
+
+[xml]
+# XML 리포트 파일
+output = coverage.xml
+
+[json]
+# JSON 리포트 파일
+output = coverage.json
+pretty_print = True
